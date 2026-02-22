@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --office-bg: #1a1a2e;
+  --floor: #16213e;
+  --desk: #2d4a7a;
+  --pixel-green: #00ff88;
+  --pixel-yellow: #ffd700;
+  --pixel-red: #ff4444;
+  --pixel-blue: #4488ff;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--office-bg);
+  color: #e0e0e0;
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* Pixel art rendering */
+.pixel {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Agent status glow effects */
+.agent-idle    { filter: brightness(0.7); }
+.agent-thinking { animation: pulse-yellow 1s infinite; }
+.agent-working  { animation: pulse-green 0.8s infinite; }
+.agent-done     { animation: flash-green 0.5s ease; }
+.agent-error    { animation: pulse-red 1s infinite; }
+
+@keyframes pulse-yellow {
+  0%, 100% { filter: drop-shadow(0 0 4px #ffd700) brightness(1); }
+  50%       { filter: drop-shadow(0 0 12px #ffd700) brightness(1.2); }
+}
+@keyframes pulse-green {
+  0%, 100% { filter: drop-shadow(0 0 4px #00ff88) brightness(1); }
+  50%       { filter: drop-shadow(0 0 14px #00ff88) brightness(1.3); }
+}
+@keyframes pulse-red {
+  0%, 100% { filter: drop-shadow(0 0 4px #ff4444) brightness(1); }
+  50%       { filter: drop-shadow(0 0 12px #ff4444) brightness(1.2); }
+}
+@keyframes flash-green {
+  0%   { filter: drop-shadow(0 0 20px #00ff88) brightness(1.5); }
+  100% { filter: brightness(1); }
+}
+
+/* Scanline overlay for retro feel */
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.08) 2px,
+    rgba(0,0,0,0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* Chat bubble */
+.speech-bubble {
+  position: absolute;
+  background: #1e3a5f;
+  border: 2px solid #4488ff;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 11px;
+  max-width: 180px;
+  line-height: 1.4;
+  z-index: 50;
+  animation: bubble-in 0.2s ease;
+}
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 16px;
+  border: 4px solid transparent;
+  border-top-color: #4488ff;
+}
+@keyframes bubble-in {
+  from { opacity: 0; transform: scale(0.8) translateY(4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #0f0f1a; }
+::-webkit-scrollbar-thumb { background: #2d4a7a; border-radius: 3px; }

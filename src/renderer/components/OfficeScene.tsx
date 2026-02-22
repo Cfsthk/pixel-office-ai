@@ -8,14 +8,14 @@ interface Props {
   isLoading: boolean
 }
 
-// Desk layout positions in the pixel office (percentage-based)
+// Positions tuned to sit characters at real bullpen desks in the background image
 const DESK_POSITIONS: Record<string, { x: number; y: number }> = {
-  boss:       { x: 38, y: 15 },
-  researcher: { x: 8,  y: 42 },
-  developer:  { x: 33, y: 42 },
-  writer:     { x: 58, y: 42 },
-  analyst:    { x: 8,  y: 68 },
-  assistant:  { x: 58, y: 68 },
+  boss:       { x: 50, y: 18 },  // Michael's glass office, back centre
+  researcher: { x: 18, y: 48 },  // Jim's desk, left row
+  developer:  { x: 38, y: 48 },  // Dwight's desk, left-centre
+  writer:     { x: 18, y: 30 },  // Pam's reception desk, front-left
+  analyst:    { x: 62, y: 48 },  // Oscar's desk, right row
+  assistant:  { x: 80, y: 48 },  // Kevin's desk, far right
 }
 
 const AGENT_COLORS: Record<string, string> = {
@@ -29,18 +29,28 @@ const AGENT_COLORS: Record<string, string> = {
 
 export function OfficeScene({ agents, onAgentClick, isLoading }: Props) {
   return (
-    <div className="relative flex-1 overflow-hidden" style={{ background: 'linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 60%, #16213e 100%)' }}>
+    <div
+      className="relative flex-1 overflow-hidden"
+      style={{
+        backgroundImage: 'url("office-bullpen-bg.jpeg")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center top',
+        imageRendering: 'pixelated',
+      }}
+    >
+      {/* Dark overlay to keep sprites readable */}
+      <div className="absolute inset-0 bg-[#0f0f1a] opacity-30 pointer-events-none" />
 
-      {/* Floor grid (pixel art floor tiles) */}
-      <div className="absolute inset-0 opacity-20" style={{
-        backgroundImage: 'linear-gradient(#2d4a7a 1px, transparent 1px), linear-gradient(90deg, #2d4a7a 1px, transparent 1px)',
-        backgroundSize: '32px 32px',
-        top: '55%',
-      }} />
+      {/* Scanline overlay */}
+      <div className="absolute inset-0 pointer-events-none opacity-10"
+        style={{
+          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, #000 2px, #000 4px)',
+        }}
+      />
 
-      {/* Office label */}
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 text-[#4488ff44] text-xs tracking-widest uppercase">
-        [ The Office ]
+      {/* Dunder Mifflin sign */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[#0f0f1acc] border border-[#ffd70044] rounded">
+        <span className="text-[#ffd700] text-[10px] font-bold tracking-widest uppercase">[ Dunder Mifflin — Scranton ]</span>
       </div>
 
       {/* Agent desks */}
@@ -60,8 +70,8 @@ export function OfficeScene({ agents, onAgentClick, isLoading }: Props) {
 
       {/* Loading overlay */}
       {isLoading && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[#4488ff] text-xs animate-pulse tracking-widest">
-          [ PROCESSING... ]
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 bg-[#0f0f1acc] border border-[#4488ff44] rounded">
+          <span className="text-[#4488ff] text-xs animate-pulse tracking-widest">[ MICHAEL IS DELEGATING... ]</span>
         </div>
       )}
     </div>

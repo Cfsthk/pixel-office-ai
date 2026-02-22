@@ -21,51 +21,50 @@ export class BossAgent extends BaseAgent {
   constructor() {
     super({
       id: 'boss',
-      name: 'The Boss',
-      role: 'Manager & Orchestrator',
-      personality: 'Sharp, decisive, no-nonsense. Gets things done fast. Speaks in short punchy sentences.',
-      systemPrompt: `You are the Boss - the manager of a pixel-art AI office. You receive tasks from the user and orchestrate your team of specialist agents.
+      name: 'Michael',
+      role: 'Regional Manager',
+      personality: 'Michael Scott — enthusiastic, well-meaning but clueless boss who desperately wants to be liked. Makes everything about himself. Quotes himself constantly. Thinks he is funnier than he is.',
+      systemPrompt: `You are Michael Scott, Regional Manager of this AI office. You receive tasks and assign them to your team of specialist agents.
 
 Your team:
-- researcher: Web research, fact-finding, summarization
-- developer: Code writing, debugging, technical tasks, file operations
-- writer: Drafts, emails, reports, copywriting, editing
-- analyst: Data analysis, CSV processing, charts, calculations
-- assistant: Calendar, scheduling, connected apps (GitHub, Gmail, etc.)
+- researcher (Jim): Research, fact-finding, web search, summaries
+- developer (Dwight): Code writing, debugging, technical tasks, scripts
+- writer (Pam): Emails, reports, copywriting, editing
+- analyst (Oscar): Data analysis, CSV processing, calculations
+- assistant (Kevin): App integrations, scheduling, reminders, GitHub
 
-Your job is to analyze each incoming request and decide:
-1. Is it clear enough to act on, or do you need clarification?
-2. Which agent(s) should handle it?
-3. Should agents work in parallel (independent sub-tasks) or sequentially (each builds on previous)?
+Your job is to analyze incoming requests and decide who handles what. You speak EXACTLY like Michael Scott:
+- You are overly enthusiastic about everything
+- You frequently make it about yourself ("You know, I once had a similar problem...")
+- You give your team unnecessary pep talks
+- You occasionally say things that don't make sense but sound confident
+- You use phrases like: "That's what she said", "I'm not superstitious, but I am a little stitious", "Would I rather be feared or loved?"
+- You end routing decisions with an inspirational quote you attribute to yourself
 
 Respond ONLY with valid JSON matching this schema:
 {
   "needsClarification": boolean,
-  "clarificationQuestion": "string (only if needsClarification=true)",
+  "clarificationQuestion": "string (only if needsClarification=true, phrased in Michael's voice)",
   "parallel": boolean,
   "assignments": [
-    { "agentId": "researcher|developer|writer|analyst|assistant", "task": "specific task description", "reason": "why this agent" }
+    { "agentId": "researcher|developer|writer|analyst|assistant", "task": "specific task description", "reason": "why this agent, phrased like Michael explaining it" }
   ],
-  "summary": "one sentence describing what you're doing"
+  "summary": "one sentence in Michael Scott's voice describing what you're doing"
 }
 
 Rules:
 - For simple single-domain tasks: assign to ONE agent
 - For complex tasks: split into parallel sub-tasks where possible
-- If the request is genuinely ambiguous (missing key info): set needsClarification=true
-- If the request is clear enough to make a reasonable attempt: just do it, don't ask
-- Keep task descriptions specific and actionable for each agent`,
+- If genuinely ambiguous: set needsClarification=true
+- If clear enough: just do it
+- Keep task descriptions specific and actionable`,
     })
   }
 
   protected async execute(task: string, systemPrompt: string): Promise<string> {
-    // Boss doesn't use the standard execute flow - it uses handle() below
     return task
   }
 
-  /**
-   * Main orchestration method - called from IPC handler
-   */
   async handle(userMessage: string): Promise<{
     needsClarification: boolean
     clarificationQuestion?: string
@@ -73,44 +72,35 @@ Rules:
     results: JobResult[]
   }> {
     const sessionId = uuidv4()
-
-    // Create session record
     createSession(sessionId, userMessage)
     this.broadcast('thinking')
 
-    // Init Boss memory for this session
     const memory = new MemoryManager('boss', sessionId)
     const memoryContext = await memory.buildContext()
 
-    // Ask DeepSeek to analyze and route the request
     const systemPrompt = `${this.config.systemPrompt}\n${memoryContext}`
     const routingResponse = await callDeepSeek([
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userMessage },
-    ], { temperature: 0.3 })
+    ], { temperature: 0.4 })
 
     let plan: RoutingPlan
     try {
-      // Strip markdown code fences if present
       const cleaned = routingResponse.replace(/```json\n?|\n?```/g, '').trim()
       plan = JSON.parse(cleaned)
     } catch {
-      // Fallback: assign to researcher if parsing fails
       plan = {
         needsClarification: false,
         parallel: false,
-        assignments: [{ agentId: 'researcher', task: userMessage, reason: 'Fallback assignment' }],
-        summary: 'Processing your request...',
+        assignments: [{ agentId: 'researcher', task: userMessage, reason: 'Jim will handle this. He is my best friend.' }],
+        summary: "This is going to be great. That's what she said.",
       }
     }
 
-    // Record Boss decision
     memory.recordDecision(`Routing plan: ${JSON.stringify(plan)}`)
     updateSession(sessionId, { boss_plan: JSON.stringify(plan), status: 'running' })
-
     this.broadcast('working', plan.summary)
 
-    // If Boss needs clarification, return early
     if (plan.needsClarification) {
       updateSession(sessionId, { status: 'done', finished_at: Math.floor(Date.now() / 1000) })
       this.broadcast('done')
@@ -122,11 +112,9 @@ Rules:
       }
     }
 
-    // Execute assignments
     const results: JobResult[] = []
 
     if (plan.parallel && plan.assignments.length > 1) {
-      // Run all agents simultaneously
       const promises = plan.assignments.map(a => {
         const agent = AgentRegistry.get(a.agentId)
         if (!agent) return Promise.resolve({
@@ -142,7 +130,6 @@ Rules:
         if (r.status === 'fulfilled') results.push(r.value)
       })
     } else {
-      // Run agents sequentially, passing previous output as context
       let previousOutput = ''
       for (const assignment of plan.assignments) {
         const agent = AgentRegistry.get(assignment.agentId)
@@ -156,7 +143,6 @@ Rules:
       }
     }
 
-    // Compress Boss session memory
     const allOutputs = results.map(r => `${r.agentName}: ${r.output.slice(0, 200)}`).join('\n')
     await memory.compress(userMessage, allOutputs)
 

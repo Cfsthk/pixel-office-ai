@@ -9,6 +9,8 @@ export type AgentStatus = 'idle' | 'thinking' | 'working' | 'done' | 'error'
 export interface AgentState {
   id: string
   name: string
+  character: string
+  role: string
   status: AgentStatus
   message?: string
 }
@@ -32,12 +34,12 @@ export interface Job {
 }
 
 const AGENTS: AgentState[] = [
-  { id: 'boss',       name: 'Boss',  status: 'idle' },
-  { id: 'researcher', name: 'Rex',   status: 'idle' },
-  { id: 'developer',  name: 'Dev',   status: 'idle' },
-  { id: 'writer',     name: 'Wren',  status: 'idle' },
-  { id: 'analyst',    name: 'Ada',   status: 'idle' },
-  { id: 'assistant',  name: 'Aria',  status: 'idle' },
+  { id: 'boss',       name: 'Michael', character: 'Michael Scott', role: 'Regional Manager',              status: 'idle' },
+  { id: 'researcher', name: 'Jim',     character: 'Jim Halpert',   role: 'Sales Rep',                     status: 'idle' },
+  { id: 'developer',  name: 'Dwight',  character: 'Dwight Schrute',role: 'Assistant Regional Manager',    status: 'idle' },
+  { id: 'writer',     name: 'Pam',     character: 'Pam Beesly',    role: 'Receptionist',                  status: 'idle' },
+  { id: 'analyst',    name: 'Oscar',   character: 'Oscar Martinez', role: 'Senior Accountant',             status: 'idle' },
+  { id: 'assistant',  name: 'Kevin',   character: 'Kevin Malone',  role: 'Accountant',                    status: 'idle' },
 ]
 
 export default function App() {
@@ -49,7 +51,6 @@ export default function App() {
   const [showMemory, setShowMemory] = useState(false)
   const [pendingClarification, setPendingClarification] = useState<string | null>(null)
 
-  // Listen for real-time agent status updates
   useEffect(() => {
     const cleanup = window.electronAPI.onAgentStatus((data) => {
       setAgents(prev => prev.map(a =>
@@ -57,7 +58,6 @@ export default function App() {
           ? { ...a, status: data.status, message: data.message }
           : a
       ))
-      // Auto-reset to idle after done/error
       if (data.status === 'done' || data.status === 'error') {
         setTimeout(() => {
           setAgents(prev => prev.map(a =>
@@ -74,17 +74,11 @@ export default function App() {
     setPendingClarification(null)
 
     const jobId = Date.now().toString()
-    const newJob: Job = {
-      id: jobId,
-      input: message,
-      results: [],
-      timestamp: new Date(),
-    }
+    const newJob: Job = { id: jobId, input: message, results: [], timestamp: new Date() }
     setActiveJob(newJob)
 
     try {
       const response = await window.electronAPI.submitJob(message)
-
       if (response.success) {
         const { result } = response
         const completedJob: Job = {
@@ -94,15 +88,13 @@ export default function App() {
           needsClarification: result.needsClarification,
           clarificationQuestion: result.clarificationQuestion,
         }
-        if (result.needsClarification) {
-          setPendingClarification(result.clarificationQuestion)
-        }
+        if (result.needsClarification) setPendingClarification(result.clarificationQuestion)
         setActiveJob(completedJob)
         setJobs(prev => [completedJob, ...prev])
       } else {
         const failedJob: Job = {
           ...newJob,
-          results: [{ agentId: 'boss', agentName: 'Boss', output: response.error, success: false }],
+          results: [{ agentId: 'boss', agentName: 'Michael', output: response.error, success: false }],
         }
         setActiveJob(failedJob)
         setJobs(prev => [failedJob, ...prev])
@@ -123,7 +115,8 @@ export default function App() {
     <div className="flex flex-col h-screen bg-[#1a1a2e] scanlines relative">
       {/* Title bar */}
       <div className="flex items-center px-4 py-2 bg-[#0f0f1a] border-b border-[#2d4a7a] drag-region">
-        <span className="text-[#4488ff] font-bold text-sm tracking-widest">PIXEL OFFICE AI</span>
+        <span className="text-[#4488ff] font-bold text-sm tracking-widest">DUNDER MIFFLIN AI</span>
+        <span className="ml-2 text-[#4488ff55] text-xs tracking-widest">— Scranton Branch</span>
         <span className="ml-auto text-[#4488ff33] text-xs">v0.1.0</span>
       </div>
 
@@ -131,16 +124,8 @@ export default function App() {
       <div className="flex flex-1 overflow-hidden">
         {/* Left: office scene */}
         <div className="flex-1 flex flex-col">
-          <OfficeScene
-            agents={agents}
-            onAgentClick={handleAgentClick}
-            isLoading={isLoading}
-          />
-          <InputPanel
-            onSubmit={submitJob}
-            isLoading={isLoading}
-            pendingClarification={pendingClarification}
-          />
+          <OfficeScene agents={agents} onAgentClick={handleAgentClick} isLoading={isLoading} />
+          <InputPanel onSubmit={submitJob} isLoading={isLoading} pendingClarification={pendingClarification} />
         </div>
 
         {/* Right: results + memory */}
@@ -152,7 +137,7 @@ export default function App() {
               onClose={() => setShowMemory(false)}
             />
           ) : (
-            <ResultsPanel job={activeJob} jobs={jobs} onSelectJob={setActiveJob} />
+            <ResultsPanel job={activeJob} jobs={jobs} onSelectJob={setActiveJob} agents={agents} />
           )}
         </div>
       </div>

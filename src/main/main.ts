@@ -17,22 +17,24 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
     },
-    titleBarStyle: 'hiddenInset',
     backgroundColor: '#1a1a2e',
-    show: true,
+    show: true, // Show immediately instead of waiting for ready-to-show
   })
 
-  // Load app
-  if (process.env.NODE_ENV === 'development') {
-    mainWindow.loadURL('http://localhost:5173')
+  // SIMPLIFIED DEV MODE: Always try localhost first during npm run dev
+  // The dev:electron script runs after vite is ready, so this should work
+  const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
+  
+  if (isDev) {
+    mainWindow.loadURL('http://localhost:5173').catch(() => {
+      // Fallback if dev server isn't running
+      console.error('Failed to connect to http://localhost:5173')
+      mainWindow?.loadFile(path.join(__dirname, '../renderer/index.html'))
+    })
     mainWindow.webContents.openDevTools()
   } else {
     mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
   }
-
-  mainWindow.once('ready-to-show', () => {
-    mainWindow?.show()
-  })
 
   mainWindow.on('closed', () => {
     mainWindow = null

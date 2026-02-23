@@ -19,7 +19,7 @@ function createWindow() {
     },
     titleBarStyle: 'hiddenInset',
     backgroundColor: '#1a1a2e',
-    show: false,
+    show: true,
   })
 
   // Load app

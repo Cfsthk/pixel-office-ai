@@ -10,6 +10,7 @@
     "build": "npm run build:react && npm run build:electron",
     "build:react": "vite build",
     "build:electron": "tsc -p tsconfig.main.json",
+    "start": "electron .",
     "package": "npm run build && electron-builder",
     "lint": "eslint src --ext .ts,.tsx"
   },

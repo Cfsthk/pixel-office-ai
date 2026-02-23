@@ -43,11 +43,14 @@ function createWindow() {
 
 // Boot sequence
 app.whenReady().then(async () => {
-  // Init SQLite memory database
-  await initDatabase()
-
-  // Init agent registry
-  AgentRegistry.init()
+  // Init SQLite memory database — wrapped so a native module error doesn't kill the window
+  try {
+    await initDatabase()
+    AgentRegistry.init()
+  } catch (err) {
+    console.error('[Boot] Failed to init database or registry:', err)
+    console.error('[Boot] Window will still open — memory features disabled until you run: npm run rebuild')
+  }
 
   createWindow()
 

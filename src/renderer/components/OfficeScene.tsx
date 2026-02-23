@@ -80,6 +80,64 @@ function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t
 }
 
+// Obstacle rectangles characters cannot walk through (% coords, {x,y,w,h})
+const OBSTACLES = [
+  { x: 38, y:  4, w: 26, h: 20 },  // Michael's glass office
+  { x:  8, y: 28, w: 16, h: 16 },  // Pam's reception desk
+  { x:  0, y:  0, w:  5, h: 100 }, // Left wall
+  { x: 95, y:  0, w:  5, h: 100 }, // Right wall
+  { x:  0, y:  0, w: 100, h:  8 }, // Top wall
+  { x:  0, y: 88, w: 100, h: 12 }, // Bottom wall / floor edge
+]
+
+const COLLISION_RADIUS = 5   // % units — how close two characters can get
+const SEPARATION_FORCE = 18  // push strength (% / sec)
+const OBSTACLE_MARGIN = 3    // % units from obstacle edge to bounce
+
+function clampToWalkable(x: number, y: number): { x: number; y: number } {
+  let cx = x
+  let cy = y
+  for (const obs of OBSTACLES) {
+    const left   = obs.x - OBSTACLE_MARGIN
+    const right  = obs.x + obs.w + OBSTACLE_MARGIN
+    const top    = obs.y - OBSTACLE_MARGIN
+    const bottom = obs.y + obs.h + OBSTACLE_MARGIN
+    if (cx > left && cx < right && cy > top && cy < bottom) {
+      // Push out through nearest edge
+      const dLeft   = cx - left
+      const dRight  = right - cx
+      const dTop    = cy - top
+      const dBottom = bottom - cy
+      const min = Math.min(dLeft, dRight, dTop, dBottom)
+      if (min === dLeft)   cx = left
+      else if (min === dRight)  cx = right
+      else if (min === dTop)    cy = top
+      else                      cy = bottom
+    }
+  }
+  return { x: Math.max(5, Math.min(95, cx)), y: Math.max(10, Math.min(85, cy)) }
+}
+
+function isInsideObstacle(x: number, y: number): boolean {
+  for (const obs of OBSTACLES) {
+    if (
+      x > obs.x - OBSTACLE_MARGIN && x < obs.x + obs.w + OBSTACLE_MARGIN &&
+      y > obs.y - OBSTACLE_MARGIN && y < obs.y + obs.h + OBSTACLE_MARGIN
+    ) return true
+  }
+  return false
+}
+
+function pickSafeWaypoint(): { x: number; y: number } {
+  let wp = STROLL_WAYPOINTS[Math.floor(Math.random() * STROLL_WAYPOINTS.length)]
+  // Fallback: keep trying until we get one outside obstacles
+  for (let i = 0; i < STROLL_WAYPOINTS.length; i++) {
+    const candidate = STROLL_WAYPOINTS[i]
+    if (!isInsideObstacle(candidate.x, candidate.y)) { wp = candidate; break }
+  }
+  return wp
+}
+
 export function OfficeScene({ agents, onAgentClick, isLoading }: Props) {
   const [spriteLoaded, setSpriteLoaded] = useState<Record<string, boolean>>({})
   const [hovered, setHovered] = useState<string | null>(null)
@@ -128,8 +186,10 @@ export function OfficeScene({ agents, onAgentClick, isLoading }: Props) {
       setCharPos(prev => {
         const next = { ...prev }
         const currentAgents = agentsRef.current
+        const ids = Object.keys(DESK_POSITIONS)
 
-        for (const id of Object.keys(DESK_POSITIONS)) {
+        // --- Phase 1: intention + primary movement ---
+        for (const id of ids) {
           const cp = { ...next[id] }
           const agent = currentAgents.find(a => a.id === id)
           const isIdle = !agent || agent.status === 'idle'
@@ -144,26 +204,21 @@ export function OfficeScene({ agents, onAgentClick, isLoading }: Props) {
           }
 
           if (!isIdle) {
-            // Working: snap back to desk
             cp.targetX = deskPos.x
             cp.targetY = deskPos.y
             cp.strolling = false
           } else {
-            // Idle: maybe start a stroll
             const dx = cp.x - cp.targetX
             const dy = cp.y - cp.targetY
             const dist = Math.sqrt(dx * dx + dy * dy)
 
             if (dist < 0.5) {
-              // Reached target
               if (cp.strolling && Math.random() < 0.3) {
-                // Return to desk with 30% chance, else pick new waypoint
                 cp.targetX = deskPos.x
                 cp.targetY = deskPos.y
                 cp.strolling = false
               } else if (!cp.strolling && Math.random() < 0.008) {
-                // 0.8% chance per frame to start strolling (~every 8s at 60fps)
-                const wp = STROLL_WAYPOINTS[Math.floor(Math.random() * STROLL_WAYPOINTS.length)]
+                const wp = pickSafeWaypoint()
                 cp.targetX = wp.x
                 cp.targetY = wp.y
                 cp.strolling = true
@@ -172,7 +227,7 @@ export function OfficeScene({ agents, onAgentClick, isLoading }: Props) {
           }
 
           // Move toward target
-          const speed = cp.strolling ? 6 : 20  // % per second
+          const speed = cp.strolling ? 6 : 20
           const tdx = cp.targetX - cp.x
           const tdy = cp.targetY - cp.y
           const tdist = Math.sqrt(tdx * tdx + tdy * tdy)
@@ -190,6 +245,47 @@ export function OfficeScene({ agents, onAgentClick, isLoading }: Props) {
 
           next[id] = cp
         }
+
+        // --- Phase 2: character–character separation steering ---
+        for (let i = 0; i < ids.length; i++) {
+          for (let j = i + 1; j < ids.length; j++) {
+            const a = next[ids[i]]
+            const b = next[ids[j]]
+            const dx = a.x - b.x
+            const dy = a.y - b.y
+            const dist = Math.sqrt(dx * dx + dy * dy)
+
+            if (dist < COLLISION_RADIUS && dist > 0.01) {
+              // How much overlap (0 = just touching, 1 = fully overlapping)
+              const overlap = 1 - dist / COLLISION_RADIUS
+              const pushX = (dx / dist) * SEPARATION_FORCE * overlap * dt
+              const pushY = (dy / dist) * SEPARATION_FORCE * overlap * dt
+
+              const na = { ...next[ids[i]], x: a.x + pushX, y: a.y + pushY }
+              const nb = { ...next[ids[j]], x: b.x - pushX, y: b.y - pushY }
+              next[ids[i]] = na
+              next[ids[j]] = nb
+            }
+          }
+        }
+
+        // --- Phase 3: clamp everyone to walkable area (obstacle bounce) ---
+        for (const id of ids) {
+          const cp = next[id]
+          const clamped = clampToWalkable(cp.x, cp.y)
+          if (clamped.x !== cp.x || clamped.y !== cp.y) {
+            // Knocked into an obstacle — also invalidate stroll target
+            next[id] = {
+              ...cp,
+              x: clamped.x,
+              y: clamped.y,
+              targetX: DESK_POSITIONS[id].x,
+              targetY: DESK_POSITIONS[id].y,
+              strolling: false,
+            }
+          }
+        }
+
         return next
       })
 

@@ -16,13 +16,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Listen for real-time agent status updates pushed from main process
   onAgentStatus: (callback: (data: AgentStatusEvent) => void) => {
-    ipcRenderer.on('agent:status', (_event, data) => callback(data))
+    ipcRenderer.on('agent:status', (_event: Electron.IpcRendererEvent, data: AgentStatusEvent) => callback(data))
     return () => ipcRenderer.removeAllListeners('agent:status')
   },
 
   // Listen for streaming output chunks
   onJobChunk: (callback: (data: JobChunkEvent) => void) => {
-    ipcRenderer.on('job:chunk', (_event, data) => callback(data))
+    ipcRenderer.on('job:chunk', (_event: Electron.IpcRendererEvent, data: JobChunkEvent) => callback(data))
     return () => ipcRenderer.removeAllListeners('job:chunk')
   },
 })

@@ -65,6 +65,33 @@ const WORKING_QUIPS: Record<string, string> = {
   assistant:  "...computing...",
 }
 
+// Per-character task pools — rotate through these as they "complete" work
+const TASK_POOLS: Record<string, string[]> = {
+  boss:       ["Write inspirational memo", "Schedule mandatory fun", "Call corporate", "Review branch numbers", "Plan Pretzel Day", "Motivational speech prep"],
+  researcher: ["Update client database", "Answer phone calls", "File TPS reports", "Coordinate with vendors", "Proof quarterly report", "Book conference room"],
+  developer:  ["Audit beet inventory", "Update threat assessment", "Run security drill", "Surveil parking lot", "Prepare bear attack protocol", "Train new recruits"],
+  writer:     ["Design new letterhead", "Update company website", "Sketch reception mural", "Compile newsletter", "Organise supply closet", "Update employee photos"],
+  analyst:    ["Reconcile Q3 accounts", "Audit expense reports", "Prepare tax estimates", "Model budget scenarios", "Review vendor invoices", "Compliance checklist"],
+  assistant:  ["Count paper reams", "Refill break room snacks", "Fix printer jam", "Update contact list", "Sort mail", "Water the plant"],
+}
+
+type Mood = 'happy' | 'focused' | 'bored' | 'stressed'
+const MOOD_EMOJI: Record<Mood, string> = {
+  happy:   '😄',
+  focused: '🎯',
+  bored:   '😑',
+  stressed:'😰',
+}
+
+const DISPLAY_NAMES: Record<string, string> = {
+  boss:       'Michael Scott',
+  researcher: 'Jim Halpert',
+  developer:  'Dwight Schrute',
+  writer:     'Pam Beesly',
+  analyst:    'Oscar Martinez',
+  assistant:  'Kevin Malone',
+}
+
 interface CharacterPos {
   x: number
   y: number
@@ -75,6 +102,14 @@ interface CharacterPos {
   strolling: boolean
   quipIndex: number
   quipTimer: number
+  // Task system
+  taskIndex: number          // which task in their pool they're on
+  taskProgress: number       // 0–100 %
+  taskTimer: number          // seconds until next progress tick
+  completedTasks: string[]   // last 3 finished tasks (for sidebar)
+  // Mood
+  mood: Mood
+  moodTimer: number          // seconds until mood re-rolls
 }
 
 function lerp(a: number, b: number, t: number) {
@@ -278,15 +313,20 @@ function astar(
 export function OfficeScene({ agents, onAgentClick, isLoading }: Props) {
   const [spriteLoaded, setSpriteLoaded] = useState<Record<string, boolean>>({})
   const [showDebug, setShowDebug] = useState(false)
+  const [selectedChar, setSelectedChar] = useState<string | null>(null)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'g' || e.key === 'G') setShowDebug(v => !v)
+      if (e.key === 'Escape') setSelectedChar(null)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
   const [hovered, setHovered] = useState<string | null>(null)
+
+  const MOODS: Mood[] = ['happy', 'focused', 'bored', 'stressed']
+  const randomMood = (): Mood => MOODS[Math.floor(Math.random() * MOODS.length)]
 
   // Per-character animated position state
   const [charPos, setCharPos] = useState<Record<string, CharacterPos>>(() => {
@@ -300,6 +340,12 @@ export function OfficeScene({ agents, onAgentClick, isLoading }: Props) {
         strolling: false,
         quipIndex: 0,
         quipTimer: 0,
+        taskIndex: 0,
+        taskProgress: 0,
+        taskTimer: 4 + Math.random() * 4,
+        completedTasks: [],
+        mood: MOODS[Math.floor(Math.random() * MOODS.length)],
+        moodTimer: 20 + Math.random() * 20,
       }
     }
     return init
@@ -348,6 +394,33 @@ export function OfficeScene({ agents, onAgentClick, isLoading }: Props) {
             const quips = IDLE_QUIPS[id] ?? ['...']
             cp.quipIndex = (cp.quipIndex + 1) % quips.length
             cp.quipTimer = 8 + Math.random() * 12
+          }
+
+          // Mood timer — re-roll mood every 20-40s
+          cp.moodTimer -= dt
+          if (cp.moodTimer <= 0) {
+            const moods: Mood[] = ['happy', 'focused', 'bored', 'stressed']
+            cp.mood = moods[Math.floor(Math.random() * moods.length)]
+            cp.moodTimer = 20 + Math.random() * 20
+          }
+
+          // Task progress — only ticks when agent is working and at desk
+          const atDesk = Math.abs(cp.x - deskPos.x) < 3 && Math.abs(cp.y - deskPos.y) < 3
+          if (!isIdle && atDesk) {
+            cp.taskTimer -= dt
+            if (cp.taskTimer <= 0) {
+              cp.taskProgress = Math.min(100, cp.taskProgress + 10 + Math.random() * 15)
+              cp.taskTimer = 3 + Math.random() * 4
+              if (cp.taskProgress >= 100) {
+                const pool = TASK_POOLS[id] ?? ['Work']
+                const done = pool[cp.taskIndex % pool.length]
+                cp.completedTasks = [done, ...cp.completedTasks].slice(0, 5)
+                cp.taskIndex = (cp.taskIndex + 1) % pool.length
+                cp.taskProgress = 0
+                cp.mood = 'happy'
+                cp.moodTimer = 15
+              }
+            }
           }
 
           const setDestination = (gx: number, gy: number) => {
@@ -504,6 +577,10 @@ export function OfficeScene({ agents, onAgentClick, isLoading }: Props) {
         const isHovered = hovered === agent.id
         const showBubble = isHovered || isWorking
 
+        const pool = TASK_POOLS[agent.id] ?? ['Work']
+        const currentTask = pool[cp.taskIndex % pool.length]
+        const isSelected = selectedChar === agent.id
+
         return (
           <div
             key={agent.id}
@@ -513,18 +590,40 @@ export function OfficeScene({ agents, onAgentClick, isLoading }: Props) {
               top: `${cp.y}%`,
               transform: 'translate(-50%, -100%)',
               transition: 'filter 0.2s ease',
-              filter: isHovered ? 'brightness(1.2)' : 'brightness(1)',
+              filter: isHovered ? 'brightness(1.3)' : 'brightness(1)',
             }}
-            onClick={() => onAgentClick(agent.id)}
+            onClick={() => { onAgentClick(agent.id); setSelectedChar(id => id === agent.id ? null : agent.id) }}
             onMouseEnter={() => setHovered(agent.id)}
             onMouseLeave={() => setHovered(null)}
           >
-            {/* Speech bubble */}
+            {/* Floating nameplate — always visible, pulses when selected */}
+            <div
+              className="absolute pointer-events-none whitespace-nowrap"
+              style={{
+                bottom: 'calc(100% + 2px)',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: '#0f0f1acc',
+                border: `1px solid ${isSelected ? color : color + '55'}`,
+                borderRadius: 3,
+                padding: '2px 6px',
+                zIndex: 25,
+                boxShadow: isSelected ? `0 0 6px ${color}88` : 'none',
+                transition: 'box-shadow 0.2s',
+              }}
+            >
+              <span className="text-[8px] font-bold tracking-widest" style={{ color }}>
+                {agent.name.toUpperCase()}
+              </span>
+              <span className="ml-1 text-[9px]">{MOOD_EMOJI[cp.mood]}</span>
+            </div>
+
+            {/* Speech bubble — below nameplate */}
             {showBubble && (
               <div
                 className="absolute pointer-events-none"
                 style={{
-                  bottom: '100%',
+                  bottom: 'calc(100% + 22px)',
                   left: '50%',
                   transform: 'translateX(-50%)',
                   marginBottom: 4,
@@ -558,42 +657,167 @@ export function OfficeScene({ agents, onAgentClick, isLoading }: Props) {
               </div>
             )}
 
-            {/* Sprite or fallback */}
-            {hasSprite ? (
-              <SpriteAnimator
-                src={spriteSrc}
-                state={animState}
-                direction={cp.direction}
-                color={color}
-                scale={2}
-                frameSize={48}
-              />
-            ) : (
-              <FallbackSprite
-                state={animState}
-                color={color}
-                scale={2}
-              />
-            )}
-
-            {/* Name tag */}
+            {/* Drop shadow ellipse */}
             <div
-              className="text-center text-[8px] font-bold tracking-wider mt-0.5 whitespace-nowrap"
-              style={{ color }}
-            >
-              {agent.name.toUpperCase()}
+              className="absolute pointer-events-none"
+              style={{
+                bottom: -4,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: 28,
+                height: 8,
+                borderRadius: '50%',
+                background: 'rgba(0,0,0,0.45)',
+                filter: 'blur(3px)',
+                zIndex: 1,
+              }}
+            />
+
+            {/* Sprite or fallback */}
+            <div style={{ position: 'relative', zIndex: 2 }}>
+              {hasSprite ? (
+                <SpriteAnimator
+                  src={spriteSrc}
+                  state={animState}
+                  direction={cp.direction}
+                  color={color}
+                  scale={2}
+                  frameSize={48}
+                />
+              ) : (
+                <FallbackSprite
+                  state={animState}
+                  color={color}
+                  scale={2}
+                />
+              )}
             </div>
+
+            {/* Task progress bar — shown when working at desk */}
+            {isWorking && cp.taskProgress > 0 && (
+              <div
+                className="absolute pointer-events-none"
+                style={{ bottom: -10, left: '50%', transform: 'translateX(-50%)', width: 36, zIndex: 5 }}
+              >
+                <div style={{ height: 3, background: '#ffffff22', borderRadius: 2, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${cp.taskProgress}%`, background: color, borderRadius: 2, transition: 'width 0.4s ease' }} />
+                </div>
+              </div>
+            )}
 
             {/* Working pulse ring */}
             {isWorking && (
               <div
                 className="absolute inset-0 rounded-full animate-ping opacity-20 pointer-events-none"
-                style={{ background: color, animationDuration: '1.2s' }}
+                style={{ background: color, animationDuration: '1.2s', zIndex: 1 }}
               />
             )}
           </div>
         )
       })}
+
+      {/* Click-to-inspect sidebar */}
+      {selectedChar && (() => {
+        const cp = charPos[selectedChar]
+        const agent = agents.find(a => a.id === selectedChar)
+        if (!cp || !agent) return null
+        const color = AGENT_COLORS[selectedChar] ?? '#ffffff'
+        const pool = TASK_POOLS[selectedChar] ?? ['Work']
+        const currentTask = pool[cp.taskIndex % pool.length]
+        const isWorking = agent.status === 'working' || agent.status === 'thinking'
+        const nextTasks = [1, 2, 3].map(i => pool[(cp.taskIndex + i) % pool.length])
+        return (
+          <div
+            className="absolute top-10 right-2 z-50 pointer-events-auto"
+            style={{
+              width: 180,
+              background: '#0d0d1aee',
+              border: `1px solid ${color}55`,
+              borderRadius: 6,
+              boxShadow: `0 0 16px ${color}33`,
+              padding: '10px 12px',
+              fontFamily: 'monospace',
+            }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <div className="text-[10px] font-bold tracking-widest" style={{ color }}>{agent.name.toUpperCase()}</div>
+                <div className="text-[8px] text-gray-400">{DISPLAY_NAMES[selectedChar] ?? ''}</div>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-base">{MOOD_EMOJI[cp.mood]}</span>
+                <button
+                  className="text-gray-500 hover:text-white text-[10px] ml-1"
+                  onClick={() => setSelectedChar(null)}
+                >✕</button>
+              </div>
+            </div>
+
+            {/* Mood */}
+            <div className="mb-2 flex items-center gap-1">
+              <span className="text-[8px] text-gray-400 uppercase tracking-wider">Mood</span>
+              <span className="text-[8px] font-bold" style={{ color }}>{cp.mood}</span>
+            </div>
+
+            {/* Status */}
+            <div className="mb-2">
+              <span
+                className="text-[8px] px-1.5 py-0.5 rounded font-bold tracking-wider"
+                style={{
+                  background: isWorking ? `${color}22` : '#ffffff11',
+                  color: isWorking ? color : '#888',
+                  border: `1px solid ${isWorking ? color + '44' : '#ffffff11'}`,
+                }}
+              >
+                {agent.status?.toUpperCase() ?? 'IDLE'}
+              </span>
+            </div>
+
+            {/* Current task + progress */}
+            <div className="mb-2">
+              <div className="text-[8px] text-gray-400 uppercase tracking-wider mb-1">Current Task</div>
+              <div className="text-[9px] text-white leading-tight mb-1">{currentTask}</div>
+              <div style={{ height: 4, background: '#ffffff15', borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%',
+                  width: `${cp.taskProgress}%`,
+                  background: color,
+                  borderRadius: 2,
+                  transition: 'width 0.4s ease',
+                }} />
+              </div>
+              <div className="text-[7px] text-gray-500 mt-0.5 text-right">{Math.round(cp.taskProgress)}%</div>
+            </div>
+
+            {/* Up next */}
+            <div className="mb-2">
+              <div className="text-[8px] text-gray-400 uppercase tracking-wider mb-1">Up Next</div>
+              {nextTasks.map((t, i) => (
+                <div key={i} className="text-[8px] text-gray-500 leading-snug">· {t}</div>
+              ))}
+            </div>
+
+            {/* Completed tasks */}
+            {cp.completedTasks.length > 0 && (
+              <div>
+                <div className="text-[8px] text-gray-400 uppercase tracking-wider mb-1">Completed</div>
+                {cp.completedTasks.map((t, i) => (
+                  <div key={i} className="text-[8px] leading-snug" style={{ color: color + 'aa' }}>✓ {t}</div>
+                ))}
+              </div>
+            )}
+
+            {/* Last quip */}
+            <div className="mt-2 pt-2 border-t border-white/10">
+              <div className="text-[8px] text-gray-400 uppercase tracking-wider mb-1">Last Said</div>
+              <div className="text-[8px] text-gray-300 italic leading-snug">
+                "{(IDLE_QUIPS[selectedChar] ?? ['...'])[cp.quipIndex % (IDLE_QUIPS[selectedChar]?.length ?? 1)]}"
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Nav-grid debug overlay — toggle with G */}
       {showDebug && (

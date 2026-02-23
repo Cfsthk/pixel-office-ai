@@ -4,6 +4,7 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
+  root: path.resolve(__dirname, 'src/renderer'),
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src/renderer'),
@@ -11,7 +12,7 @@ export default defineConfig({
   },
   base: './',
   build: {
-    outDir: 'dist/renderer',
+    outDir: path.resolve(__dirname, 'dist/renderer'),
     emptyOutDir: true,
   },
   server: {

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:react\" \"npm run dev:electron\"",
     "dev:react": "vite",
-    "dev:electron": "wait-on http://localhost:5173 && tsc -p tsconfig.main.json && electron .",
+    "dev:electron": "wait-on http://localhost:5173 && tsc -p tsconfig.main.json && cross-env NODE_ENV=development electron .",
     "build": "npm run build:react && npm run build:electron",
     "build:react": "vite build",
     "build:electron": "tsc -p tsconfig.main.json",
@@ -32,6 +32,7 @@
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.17",
     "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
     "electron": "^28.2.0",
     "electron-builder": "^24.9.1",
     "postcss": "^8.4.33",

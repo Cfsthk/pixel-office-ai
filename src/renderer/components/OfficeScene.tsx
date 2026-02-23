@@ -277,6 +277,15 @@ function astar(
 
 export function OfficeScene({ agents, onAgentClick, isLoading }: Props) {
   const [spriteLoaded, setSpriteLoaded] = useState<Record<string, boolean>>({})
+  const [showDebug, setShowDebug] = useState(false)
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'g' || e.key === 'G') setShowDebug(v => !v)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
   const [hovered, setHovered] = useState<string | null>(null)
 
   // Per-character animated position state
@@ -585,6 +594,65 @@ export function OfficeScene({ agents, onAgentClick, isLoading }: Props) {
           </div>
         )
       })}
+
+      {/* Nav-grid debug overlay — toggle with G */}
+      {showDebug && (
+        <div className="absolute inset-0 pointer-events-none z-40">
+          {/* Grid cells */}
+          {NAV_GRID.map((row, r) =>
+            row.map((blocked, c) => (
+              <div
+                key={`${c}-${r}`}
+                className="absolute"
+                style={{
+                  left:   `${c * CELL_W}%`,
+                  top:    `${r * CELL_H}%`,
+                  width:  `${CELL_W}%`,
+                  height: `${CELL_H}%`,
+                  background: blocked ? 'rgba(255,60,60,0.35)' : 'rgba(60,255,120,0.08)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  boxSizing: 'border-box',
+                }}
+              />
+            ))
+          )}
+
+          {/* Character A* paths */}
+          <svg className="absolute inset-0 w-full h-full overflow-visible">
+            {Object.entries(charPos).map(([id, cp]) => {
+              const color = AGENT_COLORS[id] ?? '#ffffff'
+              const pts = [{ x: cp.x, y: cp.y }, ...cp.path]
+              if (pts.length < 2) return null
+              return (
+                <g key={id}>
+                  <polyline
+                    points={pts.map(p => `${p.x}%,${p.y}%`).join(' ')}
+                    fill="none"
+                    stroke={color}
+                    strokeWidth="1.5"
+                    strokeDasharray="4 3"
+                    opacity="0.75"
+                  />
+                  {cp.path.map((wp, i) => (
+                    <circle key={i} cx={`${wp.x}%`} cy={`${wp.y}%`} r="3" fill={color} opacity="0.6" />
+                  ))}
+                </g>
+              )
+            })}
+          </svg>
+
+          {/* Legend */}
+          <div className="absolute top-10 right-2 bg-[#0f0f1aee] border border-white/10 rounded px-2 py-1.5 text-[8px] leading-4">
+            <div className="text-white/60 font-bold mb-1 tracking-widest">NAV GRID [G]</div>
+            <div className="flex items-center gap-1"><span className="inline-block w-3 h-3 bg-red-500/50 border border-red-400/30" /> BLOCKED</div>
+            <div className="flex items-center gap-1"><span className="inline-block w-3 h-3 bg-green-400/20 border border-green-400/20" /> WALKABLE</div>
+            <div className="flex items-center gap-1 mt-1">
+              <svg width="12" height="8"><line x1="0" y1="4" x2="12" y2="4" stroke="white" strokeWidth="1.5" strokeDasharray="3 2"/></svg>
+              A* PATH
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Loading bar */}
       {isLoading && (

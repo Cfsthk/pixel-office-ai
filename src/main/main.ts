@@ -66,7 +66,7 @@ app.on('window-all-closed', () => {
 // ─── IPC Handlers ────────────────────────────────────────────────────────────
 
 // Main entry point: user submits a job
-ipcMain.handle('job:submit', async (_event, payload: { message: string }) => {
+ipcMain.handle('job:submit', async (_event: Electron.IpcMainInvokeEvent, payload: { message: string }) => {
   try {
     const boss = new BossAgent()
     const result = await boss.handle(payload.message)
@@ -77,7 +77,7 @@ ipcMain.handle('job:submit', async (_event, payload: { message: string }) => {
 })
 
 // Fetch memory for a specific agent (for the memory viewer)
-ipcMain.handle('memory:get', async (_event, agentId: string) => {
+ipcMain.handle('memory:get', async (_event: Electron.IpcMainInvokeEvent, agentId: string) => {
   const { getAgentMemory } = await import('./memory/database')
   return getAgentMemory(agentId)
 })

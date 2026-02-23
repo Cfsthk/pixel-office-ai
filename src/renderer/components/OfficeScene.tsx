@@ -70,6 +70,7 @@ interface CharacterPos {
   y: number
   targetX: number
   targetY: number
+  path: Array<{ x: number; y: number }>  // A* waypoints remaining
   direction: 'left' | 'right' | 'down'
   strolling: boolean
   quipIndex: number
@@ -79,6 +80,14 @@ interface CharacterPos {
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t
 }
+
+// ---------------------------------------------------------------------------
+// A* Pathfinding on a 20×20 nav-grid (each cell = 5% of the canvas)
+// ---------------------------------------------------------------------------
+const GRID_COLS = 20
+const GRID_ROWS = 20
+const CELL_W = 100 / GRID_COLS  // 5% per cell
+const CELL_H = 100 / GRID_ROWS
 
 // Obstacle rectangles characters cannot walk through (% coords, {x,y,w,h})
 const OBSTACLES = [
@@ -130,12 +139,140 @@ function isInsideObstacle(x: number, y: number): boolean {
 
 function pickSafeWaypoint(): { x: number; y: number } {
   let wp = STROLL_WAYPOINTS[Math.floor(Math.random() * STROLL_WAYPOINTS.length)]
-  // Fallback: keep trying until we get one outside obstacles
   for (let i = 0; i < STROLL_WAYPOINTS.length; i++) {
     const candidate = STROLL_WAYPOINTS[i]
     if (!isInsideObstacle(candidate.x, candidate.y)) { wp = candidate; break }
   }
   return wp
+}
+
+// ---------------------------------------------------------------------------
+// Nav-grid: build once, mark obstacle cells as blocked
+// ---------------------------------------------------------------------------
+type Cell = { col: number; row: number }
+
+function worldToCell(x: number, y: number): Cell {
+  return {
+    col: Math.max(0, Math.min(GRID_COLS - 1, Math.floor(x / CELL_W))),
+    row: Math.max(0, Math.min(GRID_ROWS - 1, Math.floor(y / CELL_H))),
+  }
+}
+
+function cellToWorld(col: number, row: number): { x: number; y: number } {
+  return { x: (col + 0.5) * CELL_W, y: (row + 0.5) * CELL_H }
+}
+
+function buildNavGrid(): boolean[][] {
+  const grid: boolean[][] = Array.from({ length: GRID_ROWS }, () =>
+    Array(GRID_COLS).fill(false)
+  )
+  for (let r = 0; r < GRID_ROWS; r++) {
+    for (let c = 0; c < GRID_COLS; c++) {
+      const wx = (c + 0.5) * CELL_W
+      const wy = (r + 0.5) * CELL_H
+      grid[r][c] = isInsideObstacle(wx, wy)
+    }
+  }
+  return grid
+}
+
+const NAV_GRID = buildNavGrid()
+
+function cellKey(c: number, r: number) { return `${c},${r}` }
+
+// A* — returns list of world-space waypoints (centre of each cell), or [] if blocked
+function astar(
+  startX: number, startY: number,
+  goalX: number,  goalY: number
+): Array<{ x: number; y: number }> {
+  const start = worldToCell(startX, startY)
+  const goal  = worldToCell(goalX,  goalY)
+
+  if (start.col === goal.col && start.row === goal.row) return []
+
+  // If goal cell is blocked, find nearest open neighbour
+  const resolvedGoal = { ...goal }
+  if (NAV_GRID[goal.row]?.[goal.col]) {
+    let found = false
+    outer:
+    for (let radius = 1; radius <= 3; radius++) {
+      for (let dr = -radius; dr <= radius; dr++) {
+        for (let dc = -radius; dc <= radius; dc++) {
+          const nr = goal.row + dr
+          const nc = goal.col + dc
+          if (nr >= 0 && nr < GRID_ROWS && nc >= 0 && nc < GRID_COLS && !NAV_GRID[nr][nc]) {
+            resolvedGoal.row = nr
+            resolvedGoal.col = nc
+            found = true
+            break outer
+          }
+        }
+      }
+    }
+    if (!found) return []
+  }
+
+  type Node = { col: number; row: number; g: number; f: number; parent: string | null }
+  const open = new Map<string, Node>()
+  const closed = new Set<string>()
+
+  const heuristic = (c: number, r: number) =>
+    Math.abs(c - resolvedGoal.col) + Math.abs(r - resolvedGoal.row)
+
+  const startKey = cellKey(start.col, start.row)
+  open.set(startKey, { col: start.col, row: start.row, g: 0, f: heuristic(start.col, start.row), parent: null })
+
+  const cameFrom = new Map<string, string>()
+
+  while (open.size > 0) {
+    // Pop node with lowest f
+    let bestKey = ''
+    let bestF = Infinity
+    for (const [k, n] of open) {
+      if (n.f < bestF) { bestF = n.f; bestKey = k }
+    }
+    const current = open.get(bestKey)!
+    open.delete(bestKey)
+    closed.add(bestKey)
+
+    if (current.col === resolvedGoal.col && current.row === resolvedGoal.row) {
+      // Reconstruct path
+      const path: Array<{ x: number; y: number }> = []
+      let key: string | null = bestKey
+      while (key) {
+        const [c, r] = key.split(',').map(Number)
+        path.unshift(cellToWorld(c, r))
+        key = cameFrom.get(key) ?? null
+      }
+      path.shift() // remove start cell (character is already there)
+      return path
+    }
+
+    // 8-directional neighbours
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        if (dr === 0 && dc === 0) continue
+        const nc = current.col + dc
+        const nr = current.row + dr
+        if (nc < 0 || nc >= GRID_COLS || nr < 0 || nr >= GRID_ROWS) continue
+        if (NAV_GRID[nr][nc]) continue  // blocked
+        const nk = cellKey(nc, nr)
+        if (closed.has(nk)) continue
+
+        const moveCost = Math.abs(dc) + Math.abs(dr) === 2 ? 1.414 : 1
+        const g = current.g + moveCost
+        const existing = open.get(nk)
+        if (!existing || g < existing.g) {
+          open.set(nk, { col: nc, row: nr, g, f: g + heuristic(nc, nr), parent: bestKey })
+          cameFrom.set(nk, bestKey)
+        }
+      }
+    }
+
+    if (closed.size > 400) break // safety cap
+  }
+
+  return [] // no path found
 }
 
 export function OfficeScene({ agents, onAgentClick, isLoading }: Props) {
@@ -149,6 +286,7 @@ export function OfficeScene({ agents, onAgentClick, isLoading }: Props) {
       init[id] = {
         x: pos.x, y: pos.y,
         targetX: pos.x, targetY: pos.y,
+        path: [],
         direction: 'down',
         strolling: false,
         quipIndex: 0,
@@ -203,44 +341,56 @@ export function OfficeScene({ agents, onAgentClick, isLoading }: Props) {
             cp.quipTimer = 8 + Math.random() * 12
           }
 
-          if (!isIdle) {
-            cp.targetX = deskPos.x
-            cp.targetY = deskPos.y
-            cp.strolling = false
-          } else {
-            const dx = cp.x - cp.targetX
-            const dy = cp.y - cp.targetY
-            const dist = Math.sqrt(dx * dx + dy * dy)
+          const setDestination = (gx: number, gy: number) => {
+            cp.targetX = gx
+            cp.targetY = gy
+            cp.path = astar(cp.x, cp.y, gx, gy)
+          }
 
-            if (dist < 0.5) {
-              if (cp.strolling && Math.random() < 0.3) {
-                cp.targetX = deskPos.x
-                cp.targetY = deskPos.y
+          if (!isIdle) {
+            // Snap to desk via A* whenever destination changes
+            if (cp.strolling || Math.abs(cp.targetX - deskPos.x) > 0.1 || Math.abs(cp.targetY - deskPos.y) > 0.1) {
+              cp.strolling = false
+              setDestination(deskPos.x, deskPos.y)
+            }
+          } else {
+            // Check if arrived at current waypoint (within 1 cell)
+            const atWp = cp.path.length === 0
+            const globalDist = Math.sqrt((cp.x - cp.targetX) ** 2 + (cp.y - cp.targetY) ** 2)
+
+            if (atWp && globalDist < 1.5) {
+              if (cp.strolling && Math.random() < 0.003) {
+                setDestination(deskPos.x, deskPos.y)
                 cp.strolling = false
               } else if (!cp.strolling && Math.random() < 0.008) {
                 const wp = pickSafeWaypoint()
-                cp.targetX = wp.x
-                cp.targetY = wp.y
                 cp.strolling = true
+                setDestination(wp.x, wp.y)
               }
             }
           }
 
-          // Move toward target
+          // Advance along A* path: step toward next waypoint
+          // If path has waypoints, use the next one; otherwise head directly to target
+          const nextWp = cp.path.length > 0 ? cp.path[0] : { x: cp.targetX, y: cp.targetY }
           const speed = cp.strolling ? 6 : 20
-          const tdx = cp.targetX - cp.x
-          const tdy = cp.targetY - cp.y
+          const tdx = nextWp.x - cp.x
+          const tdy = nextWp.y - cp.y
           const tdist = Math.sqrt(tdx * tdx + tdy * tdy)
 
-          if (tdist > 0.1) {
+          if (tdist > 0.3) {
             const step = Math.min(speed * dt, tdist)
             cp.x += (tdx / tdist) * step
             cp.y += (tdy / tdist) * step
-            cp.direction = tdx < 0 ? 'left' : 'right'
+            cp.direction = tdx < -0.1 ? 'left' : tdx > 0.1 ? 'right' : cp.direction
           } else {
-            cp.x = cp.targetX
-            cp.y = cp.targetY
-            cp.direction = 'down'
+            // Arrived at this waypoint — pop it and move to next
+            if (cp.path.length > 0) cp.path = cp.path.slice(1)
+            if (cp.path.length === 0) {
+              cp.x = cp.targetX
+              cp.y = cp.targetY
+              cp.direction = 'down'
+            }
           }
 
           next[id] = cp
@@ -274,13 +424,15 @@ export function OfficeScene({ agents, onAgentClick, isLoading }: Props) {
           const cp = next[id]
           const clamped = clampToWalkable(cp.x, cp.y)
           if (clamped.x !== cp.x || clamped.y !== cp.y) {
-            // Knocked into an obstacle — also invalidate stroll target
+            // Knocked into an obstacle — recompute path back to desk
+            const desk = DESK_POSITIONS[id]
             next[id] = {
               ...cp,
               x: clamped.x,
               y: clamped.y,
-              targetX: DESK_POSITIONS[id].x,
-              targetY: DESK_POSITIONS[id].y,
+              targetX: desk.x,
+              targetY: desk.y,
+              path: astar(clamped.x, clamped.y, desk.x, desk.y),
               strolling: false,
             }
           }

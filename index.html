@@ -130,762 +130,662 @@
   /* CHARACTERS */
   .agent {
     position: absolute;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    cursor: pointer;
+    width: 32px;
+    height: 48px;
+    transform: translateX(-50%);
     z-index: 10;
-    transition: filter 0.3s;
-  }
-  .agent:hover { z-index: 30; }
-
-  .agent-sprite {
-    width: 32px;
-    height: 32px;
-    position: relative;
-    image-rendering: pixelated;
-  }
-
-  /* Pixel character body */
-  .pixel-char {
-    position: relative;
-    width: 32px;
-    height: 40px;
+    cursor: pointer;
+    transition: transform 0.15s ease;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1px;
   }
-  .pixel-head {
-    width: 18px;
-    height: 18px;
-    border-radius: 3px;
-    border: 1.5px solid rgba(0,0,0,0.3);
-    flex-shrink: 0;
+  .agent:hover { transform: translateX(-50%) scale(1.08); }
+
+  /* Pixel character */
+  .character {
+    position: relative;
+    width: 24px;
+    height: 32px;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
   }
-  .pixel-body {
-    width: 22px;
-    height: 14px;
-    border-radius: 2px;
-    border: 1.5px solid rgba(0,0,0,0.3);
-    opacity: 0.85;
-    flex-shrink: 0;
+
+  /* Head */
+  .head {
+    position: absolute;
+    top: 0; left: 6px;
+    width: 12px; height: 12px;
+    background: #f4c090;
+    border: 1px solid #d4a070;
   }
-  .pixel-legs {
+
+  /* Hair */
+  .hair {
+    position: absolute;
+    top: -2px; left: 4px;
+    width: 16px; height: 6px;
+    background: #5c4033;
+    border: 1px solid #3a2821;
+  }
+
+  /* Eyes */
+  .eyes {
+    position: absolute;
+    top: 4px;
     display: flex;
-    gap: 3px;
-    flex-shrink: 0;
+    gap: 4px;
+    left: 7px;
   }
-  .pixel-leg {
-    width: 8px;
-    height: 9px;
+  .eye {
+    width: 2px; height: 2px;
+    background: #000;
+  }
+
+  /* Smile */
+  .smile {
+    position: absolute;
+    top: 8px; left: 8px;
+    width: 8px; height: 2px;
+    background: #000;
+    border-radius: 0 0 4px 4px;
+  }
+
+  /* Body */
+  .body {
+    position: absolute;
+    top: 12px; left: 4px;
+    width: 16px; height: 14px;
+    background: #4488ff;
+    border: 1px solid #2266cc;
+  }
+
+  /* Tie (for managers) */
+  .tie {
+    position: absolute;
+    top: 13px; left: 10px;
+    width: 4px; height: 10px;
+    background: #ff4444;
+    border: 1px solid #cc2222;
+    border-top: none;
+  }
+
+  /* Arms */
+  .arms {
+    position: absolute;
+    top: 14px;
+    display: flex;
+    gap: 12px;
+    left: 2px;
+  }
+  .arm {
+    width: 4px; height: 12px;
+    background: #f4c090;
+    border: 1px solid #d4a070;
+  }
+
+  /* Legs */
+  .legs {
+    position: absolute;
+    top: 26px;
+    display: flex;
+    gap: 6px;
+    left: 6px;
+  }
+  .leg {
+    width: 4px; height: 10px;
     background: #333;
-    border-radius: 1px;
-    transform-origin: top center;
+    border: 1px solid #222;
   }
 
-  .agent-shadow {
-    width: 28px;
-    height: 8px;
-    background: rgba(0,0,0,0.45);
-    border-radius: 50%;
-    filter: blur(2px);
-    margin-top: -3px;
-  }
-  .agent-name {
+  /* Name label */
+  .name-label {
+    margin-top: 2px;
     font-size: 8px;
-    font-weight: bold;
-    letter-spacing: 0.5px;
+    color: #88aaff;
+    letter-spacing: 1px;
     white-space: nowrap;
-    margin-top: 2px;
-    text-shadow: 0 0 4px currentColor;
+    text-shadow: 0 0 4px #000;
   }
 
-  /* Speech bubble */
-  .speech-bubble {
+  /* Status indicator */
+  .status {
     position: absolute;
-    bottom: calc(100% + 4px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: #0f0f1aee;
-    border: 1px solid;
-    border-radius: 3px;
-    padding: 4px 7px;
-    font-size: 9px;
-    white-space: nowrap;
-    max-width: 160px;
-    white-space: normal;
-    text-align: center;
-    z-index: 30;
-    pointer-events: none;
-    opacity: 0;
-    transform: translateX(-50%) scale(0.8) translateY(4px);
-    transition: opacity 0.2s, transform 0.2s;
-    line-height: 1.4;
+    top: -4px; right: -4px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    border: 1px solid #0a0a14;
   }
-  .agent:hover .speech-bubble {
-    opacity: 1;
-    transform: translateX(-50%) scale(1) translateY(0);
-  }
-  .speech-bubble::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 4px solid transparent;
-    border-top-color: currentColor;
-  }
+  .status.active { background: #44ff88; box-shadow: 0 0 6px #44ff88; }
+  .status.busy { background: #ffaa00; box-shadow: 0 0 6px #ffaa00; }
+  .status.away { background: #888; }
 
-  /* Task progress bar */
-  .task-bar-wrap {
-    width: 36px;
-    height: 3px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 2px;
-    margin-top: 2px;
-    overflow: hidden;
-  }
-  .task-bar-fill {
-    height: 100%;
-    border-radius: 2px;
-    transition: width 0.5s;
-  }
-
-  /* RESULTS PANEL */
-  #results {
+  /* CHAT PANEL */
+  #chat-panel {
     width: 320px;
-    background: #0f0f1a;
+    background: #0a0a14;
     border-left: 1px solid #2d4a7a;
     display: flex;
     flex-direction: column;
-    flex-shrink: 0;
+    overflow: hidden;
   }
-  #results-header {
-    padding: 10px 12px;
+
+  #chat-header {
+    padding: 10px;
     border-bottom: 1px solid #2d4a7a;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  #results-header .title {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: bold;
+    color: #ffd700;
     letter-spacing: 2px;
+    text-align: center;
+    background: #0f0f1a;
   }
-  #results-header .title span:first-child { color: #ffd700; }
-  #results-header .title span:last-child { color: #4488ff88; }
-  #results-header .badge {
-    font-size: 9px;
-    color: #4488ff;
-    border: 1px solid #4488ff44;
-    padding: 1px 5px;
-    border-radius: 2px;
-  }
-  #results-body {
+
+  #chat-messages {
     flex: 1;
     overflow-y: auto;
     padding: 10px;
-    scrollbar-width: thin;
-    scrollbar-color: #2d4a7a #0f0f1a;
-  }
-  #results-body::-webkit-scrollbar { width: 6px; }
-  #results-body::-webkit-scrollbar-track { background: #0f0f1a; }
-  #results-body::-webkit-scrollbar-thumb { background: #2d4a7a; border-radius: 3px; }
-
-  /* Welcome state */
-  #welcome {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    gap: 8px;
-    text-align: center;
-  }
-  #welcome .emoji { font-size: 40px; }
-  #welcome .title { font-size: 12px; color: #ffd70088; }
-  #welcome .sub { font-size: 10px; color: #4a4a6a; }
-
-  /* Log entries */
-  .log-entry {
-    background: #1a1a2e;
-    border: 1px solid #2d4a7a;
-    border-radius: 2px;
-    padding: 8px;
-    margin-bottom: 8px;
     font-size: 11px;
-    animation: fadeIn 0.3s ease;
+    line-height: 1.5;
   }
-  .log-entry .who {
-    font-size: 9px;
+
+  .message {
+    margin-bottom: 12px;
+    padding: 8px;
+    background: #16213e;
+    border-radius: 4px;
+    border-left: 3px solid #4488ff;
+  }
+  .message.user { border-left-color: #ffd700; }
+  .message .sender {
     font-weight: bold;
-    letter-spacing: 1px;
+    color: #88aaff;
     margin-bottom: 4px;
   }
-  .log-entry .msg { color: #aaa; line-height: 1.5; }
+  .message.user .sender { color: #ffd700; }
 
-  @keyframes fadeIn { from { opacity:0; transform: translateY(4px); } to { opacity:1; transform: translateY(0); } }
-
-  /* INPUT PANEL */
-  #input-panel {
+  #chat-input-area {
     border-top: 1px solid #2d4a7a;
+    padding: 10px;
     background: #0f0f1a;
-    padding: 10px 12px;
-    flex-shrink: 0;
   }
-  #input-row {
-    display: flex;
-    gap: 8px;
-    align-items: flex-end;
-  }
-  #input-prompt {
-    color: #4488ff;
-    font-size: 14px;
-    padding-bottom: 6px;
-    flex-shrink: 0;
-  }
-  #task-input {
-    flex: 1;
-    background: #1a1a2e;
+
+  #chat-input {
+    width: 100%;
+    padding: 8px;
+    background: #16213e;
     border: 1px solid #2d4a7a;
+    border-radius: 3px;
     color: #ccc;
     font-family: 'Courier New', monospace;
     font-size: 11px;
-    padding: 6px 8px;
-    resize: none;
-    border-radius: 2px;
     outline: none;
-    transition: border-color 0.2s;
-    rows: 2;
+    resize: none;
   }
-  #task-input:focus { border-color: #4488ff; }
-  #task-input::placeholder { color: #4a4a6a; }
+  #chat-input:focus {
+    border-color: #4488ff;
+    box-shadow: 0 0 6px rgba(68,136,255,0.3);
+  }
+
   #send-btn {
-    background: #4488ff;
+    margin-top: 6px;
+    width: 100%;
+    padding: 8px;
+    background: #2d4a7a;
+    border: 1px solid #4466aa;
+    border-radius: 3px;
     color: #fff;
-    border: none;
     font-family: 'Courier New', monospace;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: bold;
-    letter-spacing: 1px;
-    padding: 6px 12px;
     cursor: pointer;
-    border-radius: 2px;
-    transition: background 0.2s;
-    flex-shrink: 0;
+    transition: all 0.2s;
   }
-  #send-btn:hover { background: #5599ff; }
-  #input-hint {
-    font-size: 9px;
-    color: #4488ff33;
-    margin-top: 5px;
-    letter-spacing: 0.5px;
+  #send-btn:hover {
+    background: #4466aa;
+    box-shadow: 0 0 8px rgba(68,136,255,0.4);
+  }
+  #send-btn:active {
+    transform: scale(0.98);
   }
 
-  /* ANIMATIONS */
-  @keyframes walk-legs-l {
-    0%,100% { transform: rotate(-20deg); }
-    50% { transform: rotate(20deg); }
+  /* MODAL */
+  .modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
   }
-  @keyframes walk-legs-r {
-    0%,100% { transform: rotate(20deg); }
-    50% { transform: rotate(-20deg); }
-  }
-  @keyframes bob {
-    0%,100% { transform: translateY(0); }
-    50% { transform: translateY(-2px); }
-  }
-  @keyframes pulse-gold {
-    0%,100% { filter: drop-shadow(0 0 4px #ffd700aa); }
-    50% { filter: drop-shadow(0 0 10px #ffd700); }
-  }
-  @keyframes pulse-blue {
-    0%,100% { filter: drop-shadow(0 0 4px #4488ffaa); }
-    50% { filter: drop-shadow(0 0 10px #4488ff); }
-  }
-  @keyframes pulse-green {
-    0%,100% { filter: drop-shadow(0 0 4px #00ff88aa); }
-    50% { filter: drop-shadow(0 0 10px #00ff88); }
-  }
-  @keyframes pulse-pink {
-    0%,100% { filter: drop-shadow(0 0 4px #ff88ccaa); }
-    50% { filter: drop-shadow(0 0 10px #ff88cc); }
-  }
-  @keyframes pulse-orange {
-    0%,100% { filter: drop-shadow(0 0 4px #ff8800aa); }
-    50% { filter: drop-shadow(0 0 10px #ff8800); }
-  }
-  @keyframes pulse-purple {
-    0%,100% { filter: drop-shadow(0 0 4px #aa88ffaa); }
-    50% { filter: drop-shadow(0 0 10px #aa88ff); }
+  .modal.show { display: flex; }
+
+  .modal-content {
+    background: #0f0f1a;
+    border: 2px solid #2d4a7a;
+    border-radius: 6px;
+    padding: 24px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 0 40px rgba(68,136,255,0.3);
   }
 
-  /* status dot */
-  .status-dot {
-    width: 6px; height: 6px;
+  .modal-header {
+    font-size: 16px;
+    font-weight: bold;
+    color: #ffd700;
+    margin-bottom: 16px;
+    letter-spacing: 2px;
+    text-align: center;
+  }
+
+  .modal-body {
+    font-size: 12px;
+    line-height: 1.6;
+    color: #aaa;
+    margin-bottom: 12px;
+  }
+
+  .modal-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+
+  .modal-btn {
+    padding: 8px 20px;
+    background: #2d4a7a;
+    border: 1px solid #4466aa;
+    border-radius: 3px;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .modal-btn:hover {
+    background: #4466aa;
+    box-shadow: 0 0 8px rgba(68,136,255,0.4);
+  }
+  .modal-btn.primary {
+    background: #ffd700;
+    border-color: #ffed4e;
+    color: #0a0a14;
+  }
+  .modal-btn.primary:hover {
+    background: #ffed4e;
+    box-shadow: 0 0 8px rgba(255,215,0,0.5);
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: #0a0a14; }
+  ::-webkit-scrollbar-thumb {
+    background: #2d4a7a;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: #4466aa; }
+
+  /* Character variants */
+  .agent[data-role="manager"] .body { background: #ffd700; border-color: #ccaa00; }
+  .agent[data-role="sales"] .body { background: #44ff88; border-color: #22cc66; }
+  .agent[data-role="reception"] .body { background: #ff88cc; border-color: #cc66aa; }
+  .agent[data-role="accountant"] .body { background: #8844ff; border-color: #6622cc; }
+
+  .agent[data-gender="female"] .hair {
+    height: 10px;
+    border-radius: 50% 50% 0 0;
+  }
+
+  /* Animations */
+  @keyframes float {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-4px); }
+  }
+
+  .agent:hover .character {
+    animation: float 0.6s ease-in-out;
+  }
+
+  /* Typing indicator */
+  .typing {
+    display: flex;
+    gap: 4px;
+    padding: 8px;
+  }
+  .typing span {
+    width: 6px;
+    height: 6px;
+    background: #4488ff;
     border-radius: 50%;
-    display: inline-block;
-    margin-right: 4px;
+    animation: typing 1.4s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typing {
+    0%, 60%, 100% { opacity: 0.3; }
+    30% { opacity: 1; }
   }
 </style>
 </head>
 <body>
 
-<!-- TITLE BAR -->
 <div id="titlebar">
-  <span class="left">DUNDER MIFFLIN AI &mdash; Scranton Branch</span>
-  <span class="right">v0.1.0 &nbsp;|&nbsp; DEMO MODE</span>
+  <div class="left">DUNDER MIFFLIN AI</div>
+  <div class="right">SCRANTON BRANCH</div>
 </div>
 
-<!-- MAIN -->
 <div id="main">
-
-  <!-- OFFICE SCENE -->
   <div id="office">
     <div id="office-floor"></div>
     <div id="scanlines"></div>
-    <div id="office-sign">DUNDER MIFFLIN &mdash; SCRANTON</div>
-
+    
+    <div id="office-sign">REGIONAL MANAGER</div>
+    
     <!-- Michael's glass office -->
     <div id="michael-office">
-      <div id="michael-office-label">REGIONAL MANAGER</div>
+      <div id="michael-office-label">MICHAEL SCOTT</div>
+    </div>
+
+    <!-- Agents -->
+    <div class="agent" data-id="michael" data-role="manager" style="left: 50%; top: 18%;">
+      <div class="character">
+        <div class="hair"></div>
+        <div class="head">
+          <div class="eyes"><span class="eye"></span><span class="eye"></span></div>
+          <div class="smile"></div>
+        </div>
+        <div class="body"></div>
+        <div class="tie"></div>
+        <div class="arms"><span class="arm"></span><span class="arm"></span></div>
+        <div class="legs"><span class="leg"></span><span class="leg"></span></div>
+      </div>
+      <div class="name-label">MICHAEL</div>
+      <div class="status active"></div>
+    </div>
+
+    <div class="agent" data-id="jim" data-role="sales" style="left: 25%; top: 45%;">
+      <div class="character">
+        <div class="hair"></div>
+        <div class="head">
+          <div class="eyes"><span class="eye"></span><span class="eye"></span></div>
+          <div class="smile"></div>
+        </div>
+        <div class="body"></div>
+        <div class="arms"><span class="arm"></span><span class="arm"></span></div>
+        <div class="legs"><span class="leg"></span><span class="leg"></span></div>
+      </div>
+      <div class="name-label">JIM</div>
+      <div class="status active"></div>
+    </div>
+
+    <div class="agent" data-id="pam" data-role="reception" data-gender="female" style="left: 50%; top: 70%;">
+      <div class="character">
+        <div class="hair"></div>
+        <div class="head">
+          <div class="eyes"><span class="eye"></span><span class="eye"></span></div>
+          <div class="smile"></div>
+        </div>
+        <div class="body"></div>
+        <div class="arms"><span class="arm"></span><span class="arm"></span></div>
+        <div class="legs"><span class="leg"></span><span class="leg"></span></div>
+      </div>
+      <div class="name-label">PAM</div>
+      <div class="status active"></div>
+    </div>
+
+    <div class="agent" data-id="dwight" data-role="sales" style="left: 35%; top: 45%;">
+      <div class="character">
+        <div class="hair"></div>
+        <div class="head">
+          <div class="eyes"><span class="eye"></span><span class="eye"></span></div>
+          <div class="smile"></div>
+        </div>
+        <div class="body"></div>
+        <div class="arms"><span class="arm"></span><span class="arm"></span></div>
+        <div class="legs"><span class="leg"></span><span class="leg"></span></div>
+      </div>
+      <div class="name-label">DWIGHT</div>
+      <div class="status active"></div>
+    </div>
+
+    <div class="agent" data-id="angela" data-role="accountant" data-gender="female" style="left: 70%; top: 45%;">
+      <div class="character">
+        <div class="hair"></div>
+        <div class="head">
+          <div class="eyes"><span class="eye"></span><span class="eye"></span></div>
+          <div class="smile"></div>
+        </div>
+        <div class="body"></div>
+        <div class="arms"><span class="arm"></span><span class="arm"></span></div>
+        <div class="legs"><span class="leg"></span><span class="leg"></span></div>
+      </div>
+      <div class="name-label">ANGELA</div>
+      <div class="status busy"></div>
+    </div>
+
+    <div class="agent" data-id="kevin" data-role="accountant" style="left: 60%; top: 45%;">
+      <div class="character">
+        <div class="hair"></div>
+        <div class="head">
+          <div class="eyes"><span class="eye"></span><span class="eye"></span></div>
+          <div class="smile"></div>
+        </div>
+        <div class="body"></div>
+        <div class="arms"><span class="arm"></span><span class="arm"></span></div>
+        <div class="legs"><span class="leg"></span><span class="leg"></span></div>
+      </div>
+      <div class="name-label">KEVIN</div>
+      <div class="status active"></div>
     </div>
 
     <!-- Desks -->
-    <!-- Michael desk -->
-    <div class="desk" style="left:50%;top:22%;"></div>
-    <!-- Pam desk (reception) -->
-    <div class="desk" style="left:22%;top:42%;"></div>
-    <!-- Jim desk -->
-    <div class="desk" style="left:22%;top:62%;"></div>
-    <!-- Dwight desk -->
-    <div class="desk" style="left:40%;top:62%;"></div>
-    <!-- Oscar desk -->
-    <div class="desk" style="left:60%;top:62%;"></div>
-    <!-- Kevin desk -->
-    <div class="desk" style="left:78%;top:62%;"></div>
-
-    <!-- CHARACTERS injected by JS -->
-    <div id="characters"></div>
+    <div class="desk" style="left: 50%; top: 22%;"></div>
+    <div class="desk" style="left: 25%; top: 50%;"></div>
+    <div class="desk" style="left: 35%; top: 50%;"></div>
+    <div class="desk" style="left: 60%; top: 50%;"></div>
+    <div class="desk" style="left: 70%; top: 50%;"></div>
+    <div class="desk" style="left: 50%; top: 75%;"></div>
   </div>
 
-  <!-- RIGHT PANEL -->
-  <div id="results">
-    <div id="results-header">
-      <div class="title">
-        <span>THE OFFICE</span>
-        <span> &mdash; Output</span>
-      </div>
-      <div class="badge">6 AGENTS</div>
-    </div>
-    <div id="results-body">
-      <div id="welcome">
-        <div class="emoji">🏢</div>
-        <div class="title">Welcome to Dunder Mifflin.</div>
-        <div class="sub">Give Michael a task to get started.</div>
+  <div id="chat-panel">
+    <div id="chat-header">AGENT CHAT</div>
+    <div id="chat-messages">
+      <div class="message">
+        <div class="sender">SYSTEM</div>
+        <div>Welcome to Dunder Mifflin AI! Click on any agent to start chatting.</div>
       </div>
     </div>
-    <div id="input-panel">
-      <div id="input-row">
-        <div id="input-prompt">&gt;</div>
-        <textarea id="task-input" rows="2" placeholder="Give the Boss a task..."></textarea>
-        <button id="send-btn" onclick="sendTask()">SEND</button>
-      </div>
-      <div id="input-hint">Click any character to inspect them</div>
+    <div id="chat-input-area">
+      <textarea id="chat-input" rows="3" placeholder="Type your message..."></textarea>
+      <button id="send-btn">SEND MESSAGE</button>
     </div>
   </div>
+</div>
 
+<!-- Agent Info Modal -->
+<div id="agent-modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header" id="modal-agent-name"></div>
+    <div class="modal-body">
+      <div><strong>Role:</strong> <span id="modal-agent-role"></span></div>
+      <div><strong>Status:</strong> <span id="modal-agent-status"></span></div>
+      <div style="margin-top: 12px;" id="modal-agent-bio"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn" onclick="closeModal()">CLOSE</button>
+      <button class="modal-btn primary" onclick="startChat()">START CHAT</button>
+    </div>
+  </div>
 </div>
 
 <script>
-const AGENTS = [
-  {
-    id: 'michael', name: 'MICHAEL', role: 'Regional Manager',
-    color: '#ffd700', pulse: 'pulse-gold',
-    headColor: '#f5c842', bodyColor: '#2255aa',
-    deskX: 50, deskY: 22,
-    spawnX: 50, spawnY: 15,
-    quips: ["That's what she said.", "I'm kind of a big deal.", "Would I rather be feared or loved? Both.", "I'm not superstitious, but I am a little stitious."],
-    tasks: ["Write inspirational memo", "Schedule mandatory fun", "Call corporate", "Plan Pretzel Day", "Motivational speech prep"],
-    workingQuip: "I am the fun guy AND the work guy."
+// Agent data
+const agents = {
+  michael: {
+    name: "Michael Scott",
+    role: "Regional Manager",
+    status: "active",
+    bio: "World's Best Boss. Expert in management, motivation, and that's what she said jokes. Always ready to help with leadership questions!",
+    personality: "Enthusiastic, slightly inappropriate, loves attention"
   },
-  {
-    id: 'pam', name: 'PAM', role: 'Receptionist',
-    color: '#ff88cc', pulse: 'pulse-pink',
-    headColor: '#f5c095', bodyColor: '#cc3366',
-    deskX: 22, deskY: 42,
-    spawnX: 22, spawnY: 35,
-    quips: ["Dunder Mifflin, this is Pam.", "I sold paper here for six years.", "Jim is my best friend.", "I'm not going to have regrets."],
-    tasks: ["Design new letterhead", "Update company website", "Sketch reception mural", "Compile newsletter"],
-    workingQuip: "I'll handle this professionally."
+  jim: {
+    name: "Jim Halpert",
+    role: "Sales Representative",
+    status: "active",
+    bio: "Top salesman with a laid-back attitude. Great at problem-solving and thinking outside the box. Also excellent at pranks.",
+    personality: "Witty, sarcastic, strategic thinker"
   },
-  {
-    id: 'jim', name: 'JIM', role: 'Sales / Researcher',
-    color: '#4488ff', pulse: 'pulse-blue',
-    headColor: '#e8b88a', bodyColor: '#336699',
-    deskX: 22, deskY: 62,
-    spawnX: 22, spawnY: 55,
-    quips: ["[looks at camera]", "[raises eyebrow]", "I'm just gonna... yeah.", "That's what she... never mind."],
-    tasks: ["Update client database", "File TPS reports", "Book conference room", "Coordinate with vendors"],
-    workingQuip: "On it. Probably."
+  pam: {
+    name: "Pam Beesly",
+    role: "Receptionist",
+    status: "active",
+    bio: "The glue that holds the office together. Organized, creative, and always willing to help with scheduling and coordination.",
+    personality: "Kind, artistic, good listener"
   },
-  {
-    id: 'dwight', name: 'DWIGHT', role: 'Developer / Security',
-    color: '#00ff88', pulse: 'pulse-green',
-    headColor: '#d4a84b', bodyColor: '#556600',
-    deskX: 40, deskY: 62,
-    spawnX: 40, spawnY: 55,
-    quips: ["Fact: I am always prepared.", "Identity theft is not a joke, Jim!", "Bears. Beets. Battlestar Galactica.", "Through concentration I can raise my body temperature."],
-    tasks: ["Audit beet inventory", "Run security drill", "Surveil parking lot", "Prepare bear attack protocol"],
-    workingQuip: "Executing with maximum efficiency."
+  dwight: {
+    name: "Dwight Schrute",
+    role: "Assistant Regional Manager",
+    status: "active",
+    bio: "Beet farmer and karate expert. Incredibly detail-oriented and follows rules to the letter. Best at data analysis and procedures.",
+    personality: "Intense, rule-following, competitive"
   },
-  {
-    id: 'oscar', name: 'OSCAR', role: 'Analyst',
-    color: '#ff8800', pulse: 'pulse-orange',
-    headColor: '#c08050', bodyColor: '#884400',
-    deskX: 60, deskY: 62,
-    spawnX: 60, spawnY: 55,
-    quips: ["Actually, let me clarify that.", "I'm an accountant. I handle numbers.", "That doesn't make financial sense.", "I need to verify that figure."],
-    tasks: ["Reconcile Q3 accounts", "Audit expense reports", "Prepare tax estimates", "Review vendor invoices"],
-    workingQuip: "Running the numbers now."
+  angela: {
+    name: "Angela Martin",
+    role: "Accountant",
+    status: "busy",
+    bio: "Head of accounting department. Precise, thorough, and maintains the highest standards. Expert in financial analysis.",
+    personality: "Strict, judgmental, cat lover"
   },
-  {
-    id: 'kevin', name: 'KEVIN', role: 'Assistant',
-    color: '#aa88ff', pulse: 'pulse-purple',
-    headColor: '#d4a070', bodyColor: '#553388',
-    deskX: 78, deskY: 62,
-    spawnX: 78, spawnY: 55,
-    quips: ["I like turtles.", "Chili is ready.", "I'm going to take a nap under my desk.", "Done. I think."],
-    tasks: ["Count paper reams", "Refill break room snacks", "Fix printer jam", "Sort mail"],
-    workingQuip: "...computing..."
+  kevin: {
+    name: "Kevin Malone",
+    role: "Accountant",
+    status: "active",
+    bio: "Accountant with a simple approach to complex problems. Good at finding creative solutions, even if they're unconventional.",
+    personality: "Simple, loves food, surprisingly insightful"
   }
-];
+};
 
-const MOODS = ['😄','🎯','😑','😰'];
-const STROLL_WAYPOINTS = [
-  {x:50,y:45},{x:30,y:75},{x:65,y:50},{x:85,y:45},
-  {x:15,y:60},{x:45,y:75},{x:70,y:75},{x:55,y:30}
-];
+let currentAgent = null;
 
-// State
-let agentStates = {};
-AGENTS.forEach(a => {
-  agentStates[a.id] = {
-    x: a.spawnX, y: a.spawnY,
-    targetX: a.spawnX, targetY: a.spawnY,
-    status: 'idle', // idle | walking | working
-    taskIdx: 0,
-    taskProgress: 0,
-    quipIdx: 0,
-    mood: MOODS[Math.floor(Math.random()*MOODS.length)],
-    nextQuipTime: Date.now() + rand(8000,12000),
-    nextStrollTime: Date.now() + rand(3000,8000),
-    currentQuip: '',
-    atDesk: false,
-  };
+// Modal functions
+function openModal(agentId) {
+  const agent = agents[agentId];
+  document.getElementById('modal-agent-name').textContent = agent.name.toUpperCase();
+  document.getElementById('modal-agent-role').textContent = agent.role;
+  document.getElementById('modal-agent-status').textContent = agent.status.toUpperCase();
+  document.getElementById('modal-agent-bio').textContent = agent.bio;
+  document.getElementById('agent-modal').classList.add('show');
+  currentAgent = agentId;
+}
+
+function closeModal() {
+  document.getElementById('agent-modal').classList.remove('show');
+}
+
+function startChat() {
+  closeModal();
+  const agent = agents[currentAgent];
+  addMessage('system', `You are now chatting with ${agent.name}!`);
+  document.getElementById('chat-input').focus();
+}
+
+// Chat functions
+function addMessage(sender, text, isUser = false) {
+  const messagesDiv = document.getElementById('chat-messages');
+  const messageDiv = document.createElement('div');
+  messageDiv.className = 'message' + (isUser ? ' user' : '');
+  
+  const senderDiv = document.createElement('div');
+  senderDiv.className = 'sender';
+  senderDiv.textContent = sender.toUpperCase();
+  
+  const textDiv = document.createElement('div');
+  textDiv.textContent = text;
+  
+  messageDiv.appendChild(senderDiv);
+  messageDiv.appendChild(textDiv);
+  messagesDiv.appendChild(messageDiv);
+  
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function showTyping() {
+  const messagesDiv = document.getElementById('chat-messages');
+  const typingDiv = document.createElement('div');
+  typingDiv.className = 'typing';
+  typingDiv.id = 'typing-indicator';
+  typingDiv.innerHTML = '<span></span><span></span><span></span>';
+  messagesDiv.appendChild(typingDiv);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function hideTyping() {
+  const typing = document.getElementById('typing-indicator');
+  if (typing) typing.remove();
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const message = input.value.trim();
+  
+  if (!message) return;
+  if (!currentAgent) {
+    addMessage('system', 'Please select an agent first by clicking on them!');
+    return;
+  }
+  
+  // Add user message
+  addMessage('You', message, true);
+  input.value = '';
+  
+  // Show typing indicator
+  showTyping();
+  
+  // Simulate AI response (replace with actual AI API call)
+  setTimeout(() => {
+    hideTyping();
+    const agent = agents[currentAgent];
+    const responses = [
+      `That's an interesting question! As ${agent.role}, I'd say...`,
+      `${agent.personality}... Let me think about that.`,
+      `Based on my experience at Dunder Mifflin, here's what I think...`,
+      `Great question! In my role as ${agent.role}, I handle this by...`
+    ];
+    const response = responses[Math.floor(Math.random() * responses.length)];
+    addMessage(agent.name, response);
+  }, 1500);
+}
+
+// Event listeners
+document.querySelectorAll('.agent').forEach(agent => {
+  agent.addEventListener('click', () => {
+    openModal(agent.dataset.id);
+  });
 });
 
-function rand(min,max) { return min + Math.random()*(max-min); }
-function randInt(min,max) { return Math.floor(rand(min,max)); }
-
-// Build DOM
-const container = document.getElementById('characters');
-
-function createAgentEl(agent) {
-  const el = document.createElement('div');
-  el.className = 'agent';
-  el.id = 'agent-' + agent.id;
-  el.style.left = agent.spawnX + '%';
-  el.style.top = agent.spawnY + '%';
-  el.style.transform = 'translate(-50%, -100%)';
-  el.innerHTML = `
-    <div class="speech-bubble" id="bubble-${agent.id}" style="border-color:${agent.color};color:${agent.color}">
-      <span id="bubble-text-${agent.id}">${agent.quips[0]}</span>
-    </div>
-    <div class="pixel-char" id="char-${agent.id}">
-      <div class="pixel-head" id="head-${agent.id}" style="background:${agent.headColor}"></div>
-      <div class="pixel-body" style="background:${agent.bodyColor}"></div>
-      <div class="pixel-legs">
-        <div class="pixel-leg" id="leg-l-${agent.id}"></div>
-        <div class="pixel-leg" id="leg-r-${agent.id}"></div>
-      </div>
-    </div>
-    <div class="agent-shadow"></div>
-    <div class="agent-name" style="color:${agent.color}" id="name-${agent.id}">${agent.name} ${MOODS[0]}</div>
-    <div class="task-bar-wrap" id="bar-wrap-${agent.id}" style="display:none">
-      <div class="task-bar-fill" id="bar-${agent.id}" style="width:0%;background:${agent.color}"></div>
-    </div>
-  `;
-  el.addEventListener('click', () => inspectAgent(agent.id));
-  container.appendChild(el);
-}
-
-AGENTS.forEach(createAgentEl);
-
-// Set glow animation
-function setGlow(agentId, pulse) {
-  const el = document.getElementById('char-' + agentId);
-  el.style.animation = pulse ? `${pulse} 1.5s ease-in-out infinite` : '';
-}
-
-// Update character position
-function updatePos(agentId, x, y) {
-  const el = document.getElementById('agent-' + agentId);
-  el.style.left = x + '%';
-  el.style.top = y + '%';
-}
-
-// Walking animation
-let walkTimers = {};
-function startWalking(agentId, color) {
-  const ll = document.getElementById('leg-l-' + agentId);
-  const lr = document.getElementById('leg-r-' + agentId);
-  const ch = document.getElementById('char-' + agentId);
-  ll.style.animation = 'walk-legs-l 0.35s ease-in-out infinite';
-  lr.style.animation = 'walk-legs-r 0.35s ease-in-out infinite';
-  ch.style.animation = 'bob 0.35s ease-in-out infinite';
-}
-function stopWalking(agentId) {
-  const ll = document.getElementById('leg-l-' + agentId);
-  const lr = document.getElementById('leg-r-' + agentId);
-  const ch = document.getElementById('char-' + agentId);
-  ll.style.animation = '';
-  lr.style.animation = '';
-  ch.style.animation = '';
-}
-
-// Update quip bubble
-function setQuip(agentId, text) {
-  document.getElementById('bubble-text-' + agentId).textContent = text;
-}
-
-// Send task (demo mode)
-function sendTask() {
-  const input = document.getElementById('task-input');
-  const val = input.value.trim();
-  if (!val) return;
-  input.value = '';
-
-  const body = document.getElementById('results-body');
-  const welcome = document.getElementById('welcome');
-  if (welcome) welcome.remove();
-
-  // User message
-  const userEl = document.createElement('div');
-  userEl.className = 'log-entry';
-  userEl.innerHTML = `<div class="who" style="color:#4488ff">YOU</div><div class="msg">${escHtml(val)}</div>`;
-  body.appendChild(userEl);
-
-  // Michael response
-  setTimeout(() => {
-    const msg = document.createElement('div');
-    msg.className = 'log-entry';
-    msg.style.borderColor = '#ffd70033';
-    msg.style.background = '#1e1a0e';
-    msg.innerHTML = `<div class="who" style="color:#ffd700">MICHAEL &mdash; <span style="font-weight:normal;color:#888;font-size:9px">Regional Manager</span></div><div class="msg">OK here's what I'm thinking. I'm going to delegate this to the team. We're gonna crush it. That's what she said.</div>`;
-    body.appendChild(msg);
-    body.scrollTop = body.scrollHeight;
-    triggerWorkMode();
-  }, 800);
-}
-
-function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-function triggerWorkMode() {
-  const body = document.getElementById('results-body');
-  AGENTS.forEach((agent, i) => {
-    if (agent.id === 'michael') return;
-    const st = agentStates[agent.id];
-    setTimeout(() => {
-      // Walk to desk
-      st.status = 'walking';
-      st.targetX = agent.deskX;
-      st.targetY = agent.deskY - 10;
-      st.atDesk = false;
-      startWalking(agent.id, agent.color);
-      setQuip(agent.id, agent.workingQuip);
-
-      // After reaching desk, start working
-      setTimeout(() => {
-        st.status = 'working';
-        st.taskProgress = 0;
-        stopWalking(agent.id);
-        setGlow(agent.id, agent.pulse);
-        const barWrap = document.getElementById('bar-wrap-' + agent.id);
-        barWrap.style.display = 'block';
-
-        // Log
-        const msg = document.createElement('div');
-        msg.className = 'log-entry';
-        msg.style.borderColor = agent.color + '44';
-        msg.style.background = '#0a150a';
-        msg.innerHTML = `<div class="who" style="color:${agent.color}">&#10003; ${agent.name} &mdash; <span style="font-weight:normal;color:#888;font-size:9px">${agent.role}</span></div><div class="msg" id="result-${agent.id}">Working on: ${agent.tasks[st.taskIdx]}...</div>`;
-        body.appendChild(msg);
-        body.scrollTop = body.scrollHeight;
-
-        // Progress
-        const prog = setInterval(() => {
-          st.taskProgress = Math.min(100, st.taskProgress + randInt(5,15));
-          const bar = document.getElementById('bar-' + agent.id);
-          if (bar) bar.style.width = st.taskProgress + '%';
-          if (st.taskProgress >= 100) {
-            clearInterval(prog);
-            st.status = 'idle';
-            setGlow(agent.id, null);
-            barWrap.style.display = 'none';
-            const res = document.getElementById('result-' + agent.id);
-            if (res) res.textContent = getDemoResult(agent);
-            body.scrollTop = body.scrollHeight;
-          }
-        }, 400);
-
-      }, 2000 + i*300);
-    }, i * 500);
-  });
-}
-
-function getDemoResult(agent) {
-  const results = {
-    pam: "Letterhead redesigned. Newsletter compiled. Files updated.",
-    jim: "TPS reports filed. Client DB updated. Conference room: booked.",
-    dwight: "Security audit: COMPLETE. Threat level: MODERATE. Parking lot: clear.",
-    oscar: "Q3 reconciled. Variance: -$2,340. Flagging 3 expense anomalies.",
-    kevin: "Mail sorted. Snacks refilled. Printer: unjammed (eventually)."
-  };
-  return results[agent.id] || "Task complete.";
-}
-
-// MAIN GAME LOOP
-let last = Date.now();
-function tick() {
-  const now = Date.now();
-  const dt = (now - last) / 1000;
-  last = now;
-
-  AGENTS.forEach(agent => {
-    const st = agentStates[agent.id];
-    const el = document.getElementById('agent-' + agent.id);
-
-    // Quip rotation
-    if (st.status === 'idle' && now > st.nextQuipTime) {
-      st.quipIdx = (st.quipIdx + 1) % agent.quips.length;
-      setQuip(agent.id, agent.quips[st.quipIdx]);
-      st.nextQuipTime = now + rand(8000, 12000);
-    }
-
-    // Strolling
-    if (st.status === 'idle' && now > st.nextStrollTime) {
-      const wp = STROLL_WAYPOINTS[randInt(0, STROLL_WAYPOINTS.length)];
-      st.targetX = wp.x + rand(-5,5);
-      st.targetY = wp.y + rand(-5,5);
-      st.status = 'walking';
-      startWalking(agent.id, agent.color);
-      st.nextStrollTime = now + rand(6000, 14000);
-    }
-
-    // Movement
-    if (st.status === 'walking') {
-      const dx = st.targetX - st.x;
-      const dy = st.targetY - st.y;
-      const dist = Math.sqrt(dx*dx + dy*dy);
-      if (dist < 0.5) {
-        st.x = st.targetX;
-        st.y = st.targetY;
-        st.status = 'idle';
-        stopWalking(agent.id);
-      } else {
-        const speed = 8; // % per second
-        const move = Math.min(speed * dt, dist);
-        st.x += (dx/dist) * move;
-        st.y += (dy/dist) * move;
-      }
-      updatePos(agent.id, st.x, st.y);
-      // Flip sprite based on direction
-      el.style.transform = dx < 0
-        ? 'translate(-50%,-100%) scaleX(-1)'
-        : 'translate(-50%,-100%) scaleX(1)';
-    } else if (st.status !== 'working') {
-      el.style.transform = 'translate(-50%,-100%)';
-    }
-  });
-
-  requestAnimationFrame(tick);
-}
-
-tick();
-
-// Keyboard send
-document.getElementById('task-input').addEventListener('keydown', e => {
+document.getElementById('send-btn').addEventListener('click', sendMessage);
+document.getElementById('chat-input').addEventListener('keypress', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
-    sendTask();
+    sendMessage();
   }
 });
 
-// Inspector (simple alert-style overlay)
-function inspectAgent(id) {
-  const agent = AGENTS.find(a => a.id === id);
-  const st = agentStates[id];
-  const body = document.getElementById('results-body');
-
-  // Flash the panel briefly
-  const old = body.innerHTML;
-
-  const insp = document.createElement('div');
-  insp.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <span style="color:${agent.color};font-weight:bold;letter-spacing:2px;font-size:12px">${agent.name}</span>
-      <button onclick="closeInspect()" style="background:none;border:1px solid #4a4a6a;color:#888;font-family:Courier New;cursor:pointer;padding:2px 6px;font-size:10px">X</button>
-    </div>
-    <div style="font-size:10px;color:#888;margin-bottom:8px">${agent.role}</div>
-    <div class="log-entry">
-      <div class="who" style="color:#4488ff44">STATUS</div>
-      <div class="msg"><span class="status-dot" style="background:${agent.color}"></span>${st.status.toUpperCase()}</div>
-    </div>
-    <div class="log-entry">
-      <div class="who" style="color:#4488ff44">CURRENT TASK</div>
-      <div class="msg">${agent.tasks[st.taskIdx]}</div>
-    </div>
-    <div class="log-entry">
-      <div class="who" style="color:#4488ff44">MOOD</div>
-      <div class="msg">${st.mood}</div>
-    </div>
-    <div class="log-entry">
-      <div class="who" style="color:#4488ff44">LAST QUIP</div>
-      <div class="msg" style="color:#888;">"${agent.quips[st.quipIdx]}"</div>
-    </div>
-    <div class="log-entry">
-      <div class="who" style="color:#4488ff44">UPCOMING TASKS</div>
-      ${agent.tasks.slice(1,4).map(t=>`<div class="msg" style="color:#555;font-size:10px">• ${t}</div>`).join('')}
-    </div>
-  `;
-  insp.id = 'inspector';
-
-  // Clear body and show inspector
-  body.innerHTML = '';
-  body.appendChild(insp);
-  window._savedBody = old;
-}
-
-function closeInspect() {
-  const body = document.getElementById('results-body');
-  body.innerHTML = window._savedBody || '<div id="welcome"><div class="emoji">🏢</div><div class="title">Welcome to Dunder Mifflin.</div><div class="sub">Give Michael a task to get started.</div></div>';
-}
-
-// Initial stagger: send agents to idle positions
-AGENTS.forEach((agent, i) => {
-  const st = agentStates[agent.id];
-  setTimeout(() => {
-    const wp = STROLL_WAYPOINTS[i % STROLL_WAYPOINTS.length];
-    st.targetX = wp.x;
-    st.targetY = wp.y;
-    st.status = 'walking';
-    startWalking(agent.id, agent.color);
-  }, i * 400);
+// Close modal on outside click
+document.getElementById('agent-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'agent-modal') closeModal();
 });
+
+// Welcome message
+setTimeout(() => {
+  addMessage('system', 'Pro tip: Each agent has unique expertise based on their role!');
+}, 2000);
 </script>
+
 </body>
 </html>
